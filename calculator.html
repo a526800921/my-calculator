@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+   <meta charset="UTF-8">
+   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+   <meta http-equiv="X-UA-Compatible" content="ie=edge">
+   <title>Document</title>
+   <style>
+      * {
+         margin: 0;
+         padding: 0;
+         list-style-type: none;
+
+         /* 变量 */
+         --border-999: 1px solid #999;
+      }
+
+      div {
+         box-sizing: border-box;
+      }
+
+      body {
+         display: flex;
+         flex-direction: column;
+         height: 100vh;
+      }
+
+      .top {
+         flex: 1;
+         overflow-y: scroll;
+         text-align: right;
+         padding: 0 10px;
+         font-size: 26px;
+
+         display: flex;
+         flex-direction: column-reverse;
+      }
+
+      .bottom {
+         border-top: var(--border-999);
+      }
+
+      .ul {
+         display: flex;
+         flex-wrap: wrap;
+      }
+
+      .ul li {
+         width: 25vw;
+         flex: 0 0 25vw;
+         height: 25vw;
+         box-sizing: border-box;
+         display: flex;
+         align-items: center;
+         justify-content: center;
+         border-bottom: var(--border-999);
+         border-right: var(--border-999);
+      }
+
+      .ul li:active {
+         background-color: #eee;
+      }
+
+      .ul li:nth-child(4n) {
+         border-right: 0;
+      }
+
+      .ul li:nth-last-child(1),
+      .ul li:nth-last-child(2),
+      .ul li:nth-last-child(3),
+      .ul li:nth-last-child(4),
+      .ul li:nth-last-child(5) {
+         border-bottom: 0;
+      }
+
+      .ul li:nth-last-child(5) {
+         position: relative;
+      }
+
+      .ul li:nth-last-child(5) span {
+         position: absolute;
+         top: 0;
+         left: 0;
+         bottom: -100%;
+         right: 0;
+         display: flex;
+         align-items: center;
+         justify-content: center;
+         background-color: rgb(250, 171, 25);
+      }
+
+      .ul li:nth-last-child(5) span:active {
+         background-color: rgb(224, 154, 24);
+      }
+
+      .list {
+         padding: 0 10px;
+         border-bottom: var(--border-999);
+         word-wrap: break-word;
+      }
+
+      .list:first-child {
+         border-bottom: 0;
+      }
+
+      .list p:first-child {
+         color: #999;
+      }
+
+      .list:first-child p:first-child {
+         font-size: 34px;
+         color: #000;
+      }
+
+      .list:first-child p:last-child {
+         font-size: 38px;
+         color: rgb(250, 171, 25);
+      }
+   </style>
+</head>
+
+<body>
+   <div class="top">
+
+   </div>
+
+   <div class="bottom">
+      <ul class="ul">
+         <li>AC</li>
+         <li>/</li>
+         <li>*</li>
+         <li>&lt;</li>
+         <li>7</li>
+         <li>8</li>
+         <li>9</li>
+         <li>-</li>
+         <li>4</li>
+         <li>5</li>
+         <li>6</li>
+         <li>+</li>
+         <li>1</li>
+         <li>2</li>
+         <li>3</li>
+         <li>
+            <span>=</span>
+         </li>
+         <li>%</li>
+         <li>0</li>
+         <li>.</li>
+         <li></li>
+      </ul>
+   </div>
+</body>
+
+</html>
+
+<script>
+   const template = value => {
+      return `<div class="list">
+         <p>${value}</p>
+         <p></p>
+      </div>`
+   }
+
+   const $ = nodeName => document.querySelector(nodeName)
+   const createElement = nodeName => document.createElement(nodeName)
+
+   class Api {
+      constructor() {
+         this.top = $('.top') // top节点
+         this.currentNodeFirstP = null // 当前节点引用
+         this.currentNodeLastP = null // 当前节点引用
+
+         this.input = false // 正在输入
+         this.inputPlan = 0 // 当前输入进度，运算符分隔
+         this.currentInputList = [] // 当前输入的内容，运算符分隔
+      }
+
+      init() {
+         this.currentNodeFirstP = null
+         this.currentNodeLastP = null
+         this.input = false
+         this.inputPlan = 0
+         this.currentInputList = []
+      }
+      createNode(value) {
+         // 创建节点
+         if (this.input) return 'input'
+         this.input = true
+
+         const div = createElement('div')
+         div.classList.add('list')
+
+         const fristP = this.currentNodeFirstP = createElement('p')
+         const lastP = this.currentNodeLastP = createElement('p')
+
+         // this.currentInputList[0] = fristP.innerText = value === '.' ? '0.' : value
+         fristP.innerText = '&emsp;'
+         lastP.innerHTML = '&emsp;'
+
+         div.appendChild(fristP)
+         div.appendChild(lastP)
+
+         this.top.children[0] ? this.top.insertBefore(div, this.top.children[0]) : this.top.appendChild(div)
+      }
+      setFirstPText() {
+         return this.currentNodeFirstP.innerText = this.currentInputList.join(' ')
+      }
+      getFirstPText() {
+         // return this.currentNodeFirstP.innerText
+         const {
+            currentInputList
+         } = this
+
+         const computed = currentInputList.length % 2 === 0 ? currentInputList.slice(0, -1).join('') :
+            currentInputList[currentInputList.length - 1] === '' ? currentInputList.slice(0, -2).join('') :
+            currentInputList.join('')
+
+         return computed.replace(/\%/g, '/100')
+      }
+      distinct(value, str) {
+         // 去重
+         let hasDecimals = false
+
+         return value.replace(new RegExp(`\\${str}`, 'g'), () => {
+            if (hasDecimals) return ''
+
+            hasDecimals = true
+            return str
+         })
+      }
+      setCurrentFirstPText(value, str = '.') {
+         this.currentInputList[this.inputPlan] = this.distinct(value, str)
+
+         return this.setFirstPText()
+      }
+      getCurrentInput() {
+         return this.currentInputList[this.inputPlan] || ''
+      }
+      setLastPText(value) {
+         return this.currentNodeLastP.innerText = value
+      }
+      getLastPText() {
+         return this.currentNodeLastP.innerText
+      }
+
+      setCurrentInput(value) {
+         const currentInput = this.getCurrentInput()
+
+         if (currentInput.slice(-1) === '.') {
+            // 最后一个字符串是点
+            this.currentInputList[this.inputPlan] += '0'
+         }
+
+         if (!currentInput) {
+            this.currentInputList[this.inputPlan - 1] = value
+
+            return this.setFirstPText()
+         }
+
+         this.currentInputList[this.inputPlan + 1] = value
+         this.inputPlan += 2
+
+         return this.setFirstPText()
+      }
+
+      operator(value) {
+         // 运算符
+         if (this.input) return this.setCurrentInput(value)
+
+         // 不在输入中
+
+      }
+
+      'AC' () {
+         this.init()
+
+         this.top.innerHTML = ''
+      }
+      '/' () {
+         this.operator('/')
+      }
+      '*' () {
+         this.operator('*')
+      }
+      '<' () {
+         const length = this.currentInputList.length
+         if (!length) return
+
+         const currentInput = this.getCurrentInput()
+         if (!currentInput) {
+            if (length % 2 === 0 || length === 1) {
+               this.currentInputList.length -= 1
+            } else {
+               this.currentInputList.length -= 2
+            }
+            this.inputPlan && (this.inputPlan -= 2)
+
+            return this.setFirstPText()
+         }
+
+         this.setCurrentFirstPText(currentInput.slice(0, -1))
+      }
+      '-' () {
+         if (this.createNode('-') === 'input') {
+
+            return this.operator('-')
+         }
+
+         this.setCurrentFirstPText('-')
+      }
+      '+' () {
+         this.operator('+')
+      }
+      '=' () {
+         if (this.input) {
+            this.setLastPText((new Function(`return ${this.getFirstPText()}`))())
+            this.init()
+         }
+      }
+      '%' () {
+         const currentInput = this.getCurrentInput()
+         if (!currentInput) return
+
+         let lastValue = ''
+         if (currentInput.slice(-1) === '.') {
+            lastValue = currentInput + '0%'
+         } else {
+            lastValue = currentInput + '%'
+         }
+
+         this.setCurrentFirstPText(lastValue, '%')
+      }
+      'NUMBER' (value) {
+         this.createNode(value)
+
+         const currentInput = this.getCurrentInput()
+         let lastValue = currentInput
+         if (currentInput.slice(-1) === '-' && value === '.') {
+            lastValue += '0.'
+         } else {
+            lastValue = currentInput + value
+         }
+
+         if (currentInput.indexOf('%') !== -1) {
+            lastValue = currentInput.split('%').concat([value]).join('') + '%'
+         }
+
+         if (currentInput && currentInput == 0 && currentInput.indexOf('.') === -1) {
+            if (value === '0') {
+               lastValue = currentInput
+            } else if (value === '.') {
+               lastValue = '0.'
+            } else {
+               lastValue = value
+            }
+         } else if (!currentInput && value === '.') {
+            lastValue = '0.'
+         }
+
+         this.setCurrentFirstPText(lastValue)
+      }
+   }
+   const api = new Api()
+   const isNumber = value => value === '.' || +value == value
+
+   $('.ul').addEventListener('click', e => {
+      const value = e.target.innerText
+      if (!value) return
+      if (isNumber(value)) return api['NUMBER'](value)
+
+      api[value]()
+   })
+</script>
+
+<!-- 
+   加减乘除 √
+   删除单个 √
+   删除全部 √
+   百分比 √
+   沿用上次记录
+ -->
